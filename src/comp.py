@@ -1,7 +1,6 @@
-from lib2to3.pgen2 import grammar
 from grammar import Grammar
-from lexer import Lexer, TokenType
-from my_token import Token
+from lexer import Lexer
+from my_token import Token, TokenType
 
 def main():
     # lex = Lexer("<T'> -> <F> | &, <F> -> <F'>,")
@@ -12,7 +11,19 @@ def main():
     #     print(token)
 
     gram = Grammar('src/grammar.txt')
-    print(gram.FIRSTs().items())
+    initial = True
+    for non_ts, ter in gram.m_table.value.items():
+        if initial:
+            for key, val in ter.items():
+                print(f'    {key}    |', end='')
+            initial = False
+            print()
+
+        print(non_ts, ' | ', end='')
+        for key, val in ter.items():
+            print(f'{non_ts} -> {val} | ', end='')
+        print()
+    # print(gram.m_table.value)
     exit(0)
 
 
