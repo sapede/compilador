@@ -1,0 +1,23 @@
+T  | ']' T -> None | ')' T -> None | 'id' T -> Expr(value=[Token(TokenType.NOTTERMINAL, 'P'), Token(TokenType.NOTTERMINAL, 'T'')]) | '^' T -> None | '/' T -> None | '-' T -> None | '(' T -> Expr(value=[Token(TokenType.NOTTERMINAL, 'P'), Token(TokenType.NOTTERMINAL, 'T'')]) | '$' T -> None | 'int' T -> Expr(value=[Token(TokenType.NOTTERMINAL, 'P'), Token(TokenType.NOTTERMINAL, 'T'')]) | '+' T -> None | '[' T -> None | 'exp' T -> Expr(value=[Token(TokenType.NOTTERMINAL, 'P'), Token(TokenType.NOTTERMINAL, 'T'')]) | '*' T -> None | 'real' T -> Expr(value=[Token(TokenType.NOTTERMINAL, 'P'), Token(TokenType.NOTTERMINAL, 'T'')]) | 
+P  | ']' P -> None | ')' P -> None | 'id' P -> Expr(value=[Token(TokenType.NOTTERMINAL, 'F'), Token(TokenType.NOTTERMINAL, 'P'')]) | '^' P -> None | '/' P -> None | '-' P -> None | '(' P -> Expr(value=[Token(TokenType.NOTTERMINAL, 'F'), Token(TokenType.NOTTERMINAL, 'P'')]) | '$' P -> None | 'int' P -> Expr(value=[Token(TokenType.NOTTERMINAL, 'F'), Token(TokenType.NOTTERMINAL, 'P'')]) | '+' P -> None | '[' P -> None | 'exp' P -> Expr(value=[Token(TokenType.KEYWORD, 'exp'), Token(TokenType.OPERATORS, '['), Token(TokenType.NOTTERMINAL, 'F'), Token(TokenType.OPERATORS, ']')]) | '*' P -> None | 'real' P -> Expr(value=[Token(TokenType.NOTTERMINAL, 'F'), Token(TokenType.NOTTERMINAL, 'P'')]) | 
+P'  | ']' P' -> None | ')' P' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | 'id' P' -> None | '^' P' -> Expr(value=[Token(TokenType.OPERATORS, '^'), Token(TokenType.NOTTERMINAL, 'F'), Token(TokenType.NOTTERMINAL, 'P'')]) | '/' P' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | '-' P' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | '(' P' -> None | '$' P' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | 'int' P' -> None | '+' P' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | '[' P' -> None | 'exp' P' -> None | '*' P' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | 'real' P' -> None | 
+T'  | ']' T' -> None | ')' T' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | 'id' T' -> None | '^' T' -> None | '/' T' -> Expr(value=[Token(TokenType.OPERATORS, '/'), Token(TokenType.NOTTERMINAL, 'P'), Token(TokenType.NOTTERMINAL, 'T'')]) | '-' T' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | '(' T' -> None | '$' T' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | 'int' T' -> None | '+' T' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | '[' T' -> None | 'exp' T' -> None | '*' T' -> Expr(value=[Token(TokenType.OPERATORS, '*'), Token(TokenType.NOTTERMINAL, 'P'), Token(TokenType.NOTTERMINAL, 'T'')]) | 'real' T' -> None | 
+E'  | ']' E' -> None | ')' E' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | 'id' E' -> None | '^' E' -> None | '/' E' -> None | '-' E' -> Expr(value=[Token(TokenType.OPERATORS, '-'), Token(TokenType.NOTTERMINAL, 'T'), Token(TokenType.NOTTERMINAL, 'E'')]) | '(' E' -> None | '$' E' -> Expr(value=[Token(TokenType.OPERATORS, '&')]) | 'int' E' -> None | '+' E' -> Expr(value=[Token(TokenType.OPERATORS, '+'), Token(TokenType.NOTTERMINAL, 'T'), Token(TokenType.NOTTERMINAL, 'E'')]) | '[' E' -> None | 'exp' E' -> None | '*' E' -> None | 'real' E' -> None | 
+F  | ']' F -> None | ')' F -> None | 'id' F -> Expr(value=[Token(TokenType.ID, 'id')]) | '^' F -> None | '/' F -> None | '-' F -> None | '(' F -> Expr(value=[Token(TokenType.OPERATORS, '('), Token(TokenType.NOTTERMINAL, 'E'), Token(TokenType.OPERATORS, ')')]) | '$' F -> None | 'int' F -> Expr(value=[Token(TokenType.KEYWORD, 'int')]) | '+' F -> None | '[' F -> None | 'exp' F -> None | '*' F -> None | 'real' F -> Expr(value=[Token(TokenType.KEYWORD, 'real')]) | 
+E  | ']' E -> None | ')' E -> None | 'id' E -> Expr(value=[Token(TokenType.NOTTERMINAL, 'T'), Token(TokenType.NOTTERMINAL, 'E'')]) | '^' E -> None | '/' E -> None | '-' E -> None | '(' E -> Expr(value=[Token(TokenType.NOTTERMINAL, 'T'), Token(TokenType.NOTTERMINAL, 'E'')]) | '$' E -> None | 'int' E -> Expr(value=[Token(TokenType.NOTTERMINAL, 'T'), Token(TokenType.NOTTERMINAL, 'E'')]) | '+' E -> None | '[' E -> None | 'exp' E -> Expr(value=[Token(TokenType.NOTTERMINAL, 'T'), Token(TokenType.NOTTERMINAL, 'E'')]) | '*' E -> None | 'real' E -> Expr(value=[Token(TokenType.NOTTERMINAL, 'T'), Token(TokenType.NOTTERMINAL, 'E'')]) | 
+
+E = {'(', 'id', 'int', 'real', 'exp'}
+E' = {'-', '+', '&'}
+T = {'(', 'id', 'int', 'real', 'exp'}
+T' = {'*', '/', '&'}
+P = {'(', 'id', 'int', 'real', 'exp'}
+P' = {'^', '&'}
+F = {'(', 'id', 'int', 'real'}
+
+E = {'$', ')'}
+E' = {'$', ')'}
+T = {'$', '-', '+', ')'}
+T' = {'$', '-', '+', ')'}
+P = {'$', '*', '/', '-', '+', ')'}
+P' = {'$', '*', '/', '-', '+', ')'}
+F = {'$', '^', '*', '/', '-', '+', ')', ']'}

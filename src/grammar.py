@@ -20,6 +20,9 @@ class Expr(object):
         return hash(tuple(self.value))
     
     def __eq__(self, other) -> bool:
+        if not isinstance(other, Expr):
+            return False
+
         for i in range(len(self.value)):
             if self.value[i] != other.value[i]:
                 return False
@@ -41,6 +44,8 @@ class TokenFirstFollow(object):
         return hash(tuple(temp))
 
     def __eq__(self, other) -> bool:
+        if not isinstance(other, TokenFirstFollow):
+            return False
         return self.token == other.token and self.expr == other.expr
 
     def __str__(self) -> str:
@@ -50,7 +55,7 @@ class TokenFirstFollow(object):
         return self.__str__()
 
     def to_string(self) -> str:
-        return f'({self.token} -> {self.expr}'
+        return f'{self.token} -> {self.expr}'
 
     def __lt__(self, other):
         return self.token < other.token
@@ -82,17 +87,15 @@ class M_Table(object):
         return self.value[non_terminal][terminal]
     
     def fill_table(self):
-        for key, rule in self.grammar.items():
+        for key, _ in self.grammar.items():
             first = self.firts[key]
-            for expr in rule.value:
-                for token in expr.value:
-                    if token.type != TokenType.NOTTERMINAL and token.value in first:
-                        for elem in first:
-                            if elem != '&':
-                                self.set_m_table(key, elem, expr)
-                            else:
-                                for elem_f in self.follows[key]:
-                                    self.set_m_table(key, elem_f, expr)
+            for tok in first:
+                if tok.token.value == '&':
+                    for elem_f in self.follows[key]:
+                        self.set_m_table(key, elem_f.token.value, tok.expr)
+                else:
+                    self.set_m_table(key, tok.token.value, tok.expr)
+                    
 
 class Grammar(object):
     def __init__(self, grammar_file):
@@ -100,7 +103,7 @@ class Grammar(object):
         self.terminals = set()
         self.non_terminals = set()
         self.grammar = self.read_grammar()
-        # self.m_table = self.create_m_table()
+        self.m_table = self.create_m_table()
 
 
     def read_grammar(self):
@@ -176,15 +179,21 @@ class Grammar(object):
             firsts[key] = self.FIRST(key)
         return firsts
 
-    def FIRST(self, non_terminal) -> MySet[TokenFirstFollow]:
+    def FIRST(self, non_terminal, expr=None) -> MySet[TokenFirstFollow]:
         first = MySet()
         for key, rules in self.grammar.items():
             if key == non_terminal:
                 for rule in rules.value:
                     if rule.value[0].type == TokenType.NOTTERMINAL:
-                        first.update(self.FIRST(rule.value[0].value))
+                        if expr == None:
+                            first.update(self.FIRST(rule.value[0].value, rule))
+                        else:
+                            first.update(self.FIRST(rule.value[0].value, expr))
                     else:
-                        first.add(TokenFirstFollow(rule.value[0], rule))
+                        if expr == None:
+                            first.add(TokenFirstFollow(rule.value[0], rule))
+                        else:
+                            first.add(TokenFirstFollow(rule.value[0], expr))
         return first
 
     def FOLLOWs(self) -> Dict[str, MySet[TokenFirstFollow]]:
