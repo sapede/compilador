@@ -1,19 +1,62 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple, TypeVar
 from lexer import Lexer
 from my_token import Token, TokenType
+from ordered_set import OrderedSet
+
+T = TypeVar("T")
+
+class MySet(OrderedSet):
+    def __init__(self, iterable: Optional[Iterable[T]] = None):
+        super().__init__(iterable)
+    def __str__(self) -> str:
+        return '{' + ', '.join(map(str, self)) + '}'
 
 @dataclass
 class Expr(object):
     value: List[Token] = field(default_factory=list)
+    
+    def __hash__(self) -> int:
+        return hash(tuple(self.value))
+    
+    def __eq__(self, other) -> bool:
+        for i in range(len(self.value)):
+            if self.value[i] != other.value[i]:
+                return False
+        return True
 
 @dataclass
 class Rule(object):
     name: str = ''
     value: List[Expr] = field(default_factory=list)
 
+@dataclass
+class TokenFirstFollow(object):
+    def __init__(self, token: Token, expr: Expr):
+        self.token = token
+        self.expr = expr
+
+    def __hash__(self) -> int:
+        temp = [self.token.__hash__(), self.expr.__hash__()]
+        return hash(tuple(temp))
+
+    def __eq__(self, other) -> bool:
+        return self.token == other.token and self.expr == other.expr
+
+    def __str__(self) -> str:
+        return f'\'{self.token.value}\''
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def to_string(self) -> str:
+        return f'({self.token} -> {self.expr}'
+
+    def __lt__(self, other):
+        return self.token < other.token
+
 class M_Table(object):
-    def __init__(self, grammar: Dict[str, Rule], non_terminals: Set[str], terminals:Set[str], firsts: Dict[str, Set[str]], follows: Dict[str,Set[str]], value: Dict[str, Dict[str, Expr]] = {}):
+    def __init__(self, grammar: Dict[str, Rule], non_terminals: Set[str], terminals:Set[str], firsts: Dict[str, Set[TokenFirstFollow]], follows: Dict[str,Set[TokenFirstFollow]], value: Dict[str, Dict[str, Expr]] = {}):
         self.grammar = grammar
         self.non_terminals = non_terminals
         self.terminals = terminals
@@ -57,7 +100,7 @@ class Grammar(object):
         self.terminals = set()
         self.non_terminals = set()
         self.grammar = self.read_grammar()
-        self.m_table = self.create_m_table()
+        # self.m_table = self.create_m_table()
 
 
     def read_grammar(self):
@@ -127,35 +170,36 @@ class Grammar(object):
         rule.value.append(ret[0])
         return rule
 
-    def FIRSTs(self):
+    def FIRSTs(self) -> Dict[str, MySet[TokenFirstFollow]]:
         firsts = dict()
         for key, _ in self.grammar.items():
             firsts[key] = self.FIRST(key)
         return firsts
 
-    def FIRST(self, non_terminal):
-        first = set()
+    def FIRST(self, non_terminal) -> MySet[TokenFirstFollow]:
+        first = MySet()
         for key, rules in self.grammar.items():
             if key == non_terminal:
                 for rule in rules.value:
                     if rule.value[0].type == TokenType.NOTTERMINAL:
                         first.update(self.FIRST(rule.value[0].value))
                     else:
-                        first.add(rule.value[0].value)
+                        first.add(TokenFirstFollow(rule.value[0], rule))
         return first
 
-    def FOLLOWs(self):
+    def FOLLOWs(self) -> Dict[str, MySet[TokenFirstFollow]]:
         follows = dict()
         for key, _ in self.grammar.items():
             follows[key] = self.FOLLOW(key)
         return follows
 
-    def FOLLOW(self, non_terminal):
-        follow = set()
+    def FOLLOW(self, non_terminal) -> MySet[TokenFirstFollow]:
+        follow = MySet()
         initial = True
         for key , rule in self.grammar.items():
             if initial == True:
-                follow.add('$')
+                tok = Token(TokenType.EOF, '$')
+                follow.add(TokenFirstFollow(tok, Expr([tok])))
                 initial = False
             for expr in rule.value:
                 for i, token in enumerate(expr.value):
@@ -166,14 +210,16 @@ class Grammar(object):
                             break
                         
                         if expr.value[i+1].type != TokenType.NOTTERMINAL:
-                            follow.add(expr.value[i+1].value)
+                            follow.add( TokenFirstFollow(expr.value[i+1], expr))
 
                         if expr.value[i+1].type == TokenType.NOTTERMINAL and expr.value[i+1].value != non_terminal:
                             first = self.FIRST(expr.value[i+1].value)
-                            if '&' in first:
-                                first.remove('&')
-                                follow.update(first)
-                                follow.update(self.FOLLOW(key))
+                            for tok in first:
+                                if tok.token.value == '&':
+                                    first.remove(tok)
+                                    follow.update(first)
+                                    follow.update(self.FOLLOW(key))
+                                    break
                             else:
                                 follow.update(first)
 
