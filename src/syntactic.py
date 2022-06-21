@@ -23,7 +23,7 @@ class Syntactic:
     def analyze(self):
         self.stack = []
         self.stack.append(self.grammar.firt_rule)
-        self.stack.append(Token(TokenType.EOF, '$'))
+        self.stack.append(Token.EOF())
 
         token = self.get_next_token()
         self.print_stack()
@@ -45,12 +45,13 @@ class Syntactic:
                 raise Exception('Invalid token')
 
             elif (self.grammar.m_table.value[X.value][terminal] is None):
-                raise Exception('Invalid token')
+                l = [k for k, t in self.grammar.m_table.value[X.value].items() if t is not None]
+                raise Exception(f"\'{terminal}\' Invalid token, Expecting the following tokens: {', '.join(l)}")
 
             else:
                 self.stack.pop(0)
                 exp = self.grammar.m_table.value[X.value][terminal].value[:]
-                self.stack = [*[t for t in exp if t.value != '&'], *self.stack]
+                self.stack = [*[t for t in exp if t != Token.end_of_rule()], *self.stack]
 
             self.print_stack()
             X = self.get_first_stack()

@@ -31,3 +31,11 @@ class Token(object):
 
     def __lt__(self, other):
         return self.value < other.value
+
+    @staticmethod
+    def EOF():
+        return Token(TokenType.EOF, '$')
+
+    @staticmethod
+    def end_of_rule():
+        return Token(TokenType.OPERATORS, '&')

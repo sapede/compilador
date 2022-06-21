@@ -65,8 +65,8 @@ class M_Table(object):
         self.grammar = grammar
         self.non_terminals = non_terminals
         self.terminals = terminals
-        self.terminals.remove('&')
-        self.terminals.add('$')
+        self.terminals.remove(Token.end_of_rule().value)
+        self.terminals.add(Token.EOF().value)
         self.firts = firsts
         self.follows = follows
         self.value = value
@@ -90,7 +90,7 @@ class M_Table(object):
         for key, _ in self.grammar.items():
             first = self.firts[key]
             for tok in first:
-                if tok.token.value == '&':
+                if tok.token == Token.end_of_rule():
                     for elem_f in self.follows[key]:
                         self.set_m_table(key, elem_f.token.value, tok.expr)
                 else:
@@ -214,8 +214,7 @@ class Grammar(object):
         initial = True
         for key , rule in self.grammar.items():
             if initial == True:
-                tok = Token(TokenType.EOF, '$')
-                follow.add(TokenFirstFollow(tok, Expr([tok])))
+                follow.add(TokenFirstFollow(Token.EOF(), Expr([Token.EOF()])))
                 initial = False
             for expr in rule.value:
                 for i, token in enumerate(expr.value):
@@ -231,7 +230,7 @@ class Grammar(object):
                         if expr.value[i+1].type == TokenType.NOTTERMINAL and expr.value[i+1].value != non_terminal:
                             first = self.FIRST(expr.value[i+1].value)
                             for tok in first:
-                                if tok.token.value == '&':
+                                if tok.token == Token.end_of_rule():
                                     first.remove(tok)
                                     follow.update(first)
                                     follow.update(self.FOLLOW(key))

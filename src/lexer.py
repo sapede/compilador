@@ -71,4 +71,4 @@ class Lexer(object):
                 
 
 
-        return Token(TokenType.EOF, '$')
+        return Token.EOF()
