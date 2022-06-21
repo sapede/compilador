@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 class TokenType(Enum):
-    INTEGER = auto()
+    INT = auto()
     REAL = auto()
     OPERATORS = auto()
     KEYWORD = auto()

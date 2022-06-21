@@ -40,7 +40,7 @@ class Lexer(object):
                 continue
 
             if self.current_char.isdigit():
-                tok = Token(TokenType.INTEGER , self.integer())
+                tok = Token(TokenType.INT , self.integer())
 
                 if self.current_char == '.':
                     self.advance()
@@ -71,4 +71,4 @@ class Lexer(object):
                 
 
 
-        return Token(TokenType.EOF, None)
+        return Token(TokenType.EOF, '$')

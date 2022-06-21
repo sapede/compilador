@@ -108,6 +108,8 @@ class Grammar(object):
 
     def read_grammar(self):
 
+        init = True
+
         with open(self.grammar_file, 'r') as f:
             self.lex = Lexer(f.read())
             grammar = dict()
@@ -120,6 +122,11 @@ class Grammar(object):
                         raise Exception('Invalid non-terminal')
 
                     non_terminal.type = TokenType.NOTTERMINAL
+
+                    if init:
+                        self.firt_rule = non_terminal
+                        init = False
+
                     self.non_terminals.add(non_terminal.value)
                     last_non_terminal = non_terminal
 
