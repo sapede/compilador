@@ -38,4 +38,4 @@ class Token(object):
 
     @staticmethod
     def end_of_rule():
-        return Token(TokenType.OPERATORS, '&')
+        return Token(TokenType.OPERATORS, 'λ')

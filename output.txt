@@ -10,34 +10,16 @@ E'  $
 T  E'  $  
 P  T'  E'  $  
 F  P'  T'  E'  $  
-(  E  )  P'  T'  E'  $  
-E  )  P'  T'  E'  $  
-T  E'  )  P'  T'  E'  $  
-P  T'  E'  )  P'  T'  E'  $  
-F  P'  T'  E'  )  P'  T'  E'  $  
-int  P'  T'  E'  )  P'  T'  E'  $  
-P'  T'  E'  )  P'  T'  E'  $  
-T'  E'  )  P'  T'  E'  $  
-*  P  T'  E'  )  P'  T'  E'  $  
-P  T'  E'  )  P'  T'  E'  $  
-F  P'  T'  E'  )  P'  T'  E'  $  
-int  P'  T'  E'  )  P'  T'  E'  $  
-P'  T'  E'  )  P'  T'  E'  $  
-T'  E'  )  P'  T'  E'  $  
-E'  )  P'  T'  E'  $  
-)  P'  T'  E'  $  
+int  P'  T'  E'  $  
 P'  T'  E'  $  
 T'  E'  $  
-E'  $  
-+  T  E'  $  
-T  E'  $  
+*  P  T'  E'  $  
 P  T'  E'  $  
-exp  [  F  ]  T'  E'  $  
-[  F  ]  T'  E'  $  
-F  ]  T'  E'  $  
-int  ]  T'  E'  $  
-]  T'  E'  $  
+F  P'  T'  E'  $  
+int  P'  T'  E'  $  
+P'  T'  E'  $  
 T'  E'  $  
 E'  $  
 $  
 
+[1, '+', 2, '*', 3, '$']

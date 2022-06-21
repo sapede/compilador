@@ -25,6 +25,8 @@ class Syntactic:
         self.stack.append(self.grammar.firt_rule)
         self.stack.append(Token.EOF())
 
+        self.read_stack = []
+
         token = self.get_next_token()
         self.print_stack()
         while (len(self.stack) > 0 ):
@@ -39,6 +41,7 @@ class Syntactic:
 
             if (X == terminal):
                 self.stack.pop(0)
+                self.read_stack.append(token)
                 token = self.get_next_token()
             
             elif (X.type != TokenType.NOTTERMINAL):
@@ -55,6 +58,7 @@ class Syntactic:
 
             self.print_stack()
             X = self.get_first_stack()
+        print([t.value for t in self.read_stack])
 
     def get_first_stack(self):
         return self.stack[0] if len(self.stack) > 0 else None

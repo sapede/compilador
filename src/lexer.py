@@ -1,7 +1,7 @@
 from my_token import Token, TokenType
 
 KEYWORDS = ['exp', 'int', 'real']
-OPERATORS = ['=','+', '-', '*', '/', '^', '(' , ')', '[', ']', '<', '>', '|', ',', '&']
+OPERATORS = ['=','+', '-', '*', '/', '^', '(' , ')', '[', ']', '<', '>', '|', ',', '&', 'λ']
 
 class Lexer(object):
     def __init__(self, text):
@@ -48,6 +48,11 @@ class Lexer(object):
 
                 return tok
 
+            if self.current_char in OPERATORS:
+                temp = self.current_char
+                self.advance()
+                return Token(TokenType.OPERATORS, temp)
+                
             result = ''     
             if self.current_char.isalpha():
                 while self.current_char is not None and self.current_char.isalnum():
@@ -62,10 +67,6 @@ class Lexer(object):
 
                 return Token(TokenType.ID, result)
 
-            if self.current_char in OPERATORS:
-                temp = self.current_char
-                self.advance()
-                return Token(TokenType.OPERATORS, temp)
 
             self.error()
                 
