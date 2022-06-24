@@ -26,9 +26,14 @@ class Syntactic:
         self.stack.append(Token.EOF())
 
         self.read_stack = []
+        self.read_stack_id = []
+        self.read_stack_op = []
+        self.terminator_stack = []
 
+        need_add_to_stack = False
+        last_token_exp = None
         token = self.get_next_token()
-        self.print_stack()
+        # self.print_stack()
         while (len(self.stack) > 0 ):
             X = self.get_first_stack()
 
@@ -38,10 +43,20 @@ class Syntactic:
             else:
                 terminal = token
 
-
+            # TO DEBUG
+            # print(f'ID  == {[t for t in self.read_stack_id]}')
+            # print(f'OP  == {[t.value for t in self.read_stack_op]}')
+            # print(f'TER  == {[t.value for t in self.terminator_stack]}')
+            # print('------------------------------------------------')
             if (X == terminal):
                 self.stack.pop(0)
-                self.read_stack.append(token)
+                if (terminal.type == TokenType.KEYWORD):
+                    self.read_stack_id.insert(0, token.value)
+                elif (terminal.type == TokenType.OPERATORS):
+                    self.read_stack_op.insert(0, token)
+                    self.terminator_stack.insert(0, last_token_exp)
+                
+                self.read_stack.append(token) 
                 token = self.get_next_token()
             
             elif (X.type != TokenType.NOTTERMINAL):
@@ -52,13 +67,58 @@ class Syntactic:
                 raise Exception(f"\'{terminal}\' Invalid token, Expecting the following tokens: {', '.join(l)}")
 
             else:
-                self.stack.pop(0)
-                exp = self.grammar.m_table.value[X][terminal].value[:]
-                self.stack = [*[t for t in exp if t != Token.end_of_rule()], *self.stack]
+                term = self.stack.pop(0)
 
-            self.print_stack()
+                if (len(self.terminator_stack) > 0 and term == self.terminator_stack[0]):
+                    val1 = float(self.read_stack_id.pop(0))
+                    val2 = float(self.read_stack_id.pop(0))
+
+                    op = self.read_stack_op.pop(0)
+                    self.terminator_stack.pop(0)
+
+                    match (op.value):
+                        case '+':
+                            self.read_stack_id.insert(0, val1 + val2)
+                        case '-':
+                            self.read_stack_id.insert(0, val1 - val2)
+                        case '*':
+                            self.read_stack_id.insert(0, val1 * val2)
+                        case '/':
+                            self.read_stack_id.insert(0, val1 / val2)
+                        case '^':
+                            self.read_stack_id.insert(0, val1 ** val2)
+                        # case '%':
+                        #     self.read_stack_id.insert(0, val1 % val2)
+                        # case '==':
+                        #     self.read_stack_id.insert(0, val1 == val2)
+                        # case '!=':
+                        #     self.read_stack_id.insert(0, val1 != val2)
+                        # case '<':
+                        #     self.read_stack_id.insert(0, val1 < val2)
+                        # case '>':
+                        #     self.read_stack_id.insert(0, val1 > val2)
+                        # case '<=':
+                        #     self.read_stack_id.insert(0, val1 <= val2)
+                        # case '>=':
+                        #     self.read_stack_id.insert(0, val1 >= val2)
+
+
+                exp = self.grammar.m_table.value[X][terminal].value[:]
+                exp_without_end = [t for t in exp if t != Token.end_of_rule()]
+
+                if len(exp_without_end) > 0: 
+                    last_token_exp = exp_without_end[-1] 
+                self.stack = [*exp_without_end, *self.stack]
+
+            # self.print_stack()
             X = self.get_first_stack()
-        print([t.value for t in self.read_stack])
+        # print([t.value for t in self.read_stack])
+
+        if (len(self.read_stack_id) > 0):
+            return self.read_stack_id[0]
+            # print(f'O Resultado da conta é := {self.read_stack_id[0]}')
+
+        return 0
 
     def get_first_stack(self):
         return self.stack[0] if len(self.stack) > 0 else None

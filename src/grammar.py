@@ -95,6 +95,22 @@ class M_Table(object):
                         self.set_m_table(key, elem_f.token, tok.expr)
                 else:
                     self.set_m_table(key, tok.token, tok.expr)
+
+    def print_table(self):
+        print(''.rjust(14," "), end='')
+        for terminal in self.terminals:
+            print(f'{terminal.value}'.center(14," "), end='')
+        print()
+        print('_'*500)
+        for key, rule in self.grammar.items():
+            print(f'{key.value} ->'.center(14," "), end='')
+            for terminal in self.terminals:
+                if self.value[key][terminal] is not None:
+                    print(f'{key.value} -> { " ".join([t.value for t in self.value[key][terminal].value])}'.center(14," "), end='')
+                else:
+                    print(f'None'.center(14," "), end='')
+            print('')
+
                     
 
 class Grammar(object):
