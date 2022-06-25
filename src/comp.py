@@ -6,7 +6,7 @@ from syntactic import Syntactic
 def main():
     sint = Syntactic()
 
-    # sint.grammar.m_table.print_table()
+    sint.grammar.m_table.print_table()
     print(f'O resultado da conta é := {sint.analyze()}')
 
     exit(0)

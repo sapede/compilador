@@ -10,13 +10,26 @@ class TokenType(Enum):
     EOF = auto()
     NOTTERMINAL = auto()
     
-
+class GenereteIds:
+    def __init__(self):
+        types = [t.name for t in TokenType]
+        ids = [0 for t in TokenType]
+        self.ids = dict(zip(types, ids))
+    
+    def generate(self, type):
+        self.ids[type.name] += 1
+        return self.ids[type.name]
 
 @dataclass()
-class Token(object):
+class Token(object): 
     type: TokenType = TokenType.ID
     value: str = ''
+    generator : GenereteIds = GenereteIds()
     
+    def __post_init__(self):
+        self.id = self.generator.generate(self.type)
+        self.value_id = str(self.value) + str(self.id)
+
     def __str__(self) -> str:
         return f'Token({self.type}, \'{self.value}\')'
 
@@ -24,6 +37,8 @@ class Token(object):
         return self.__str__()
 
     def __eq__(self, other) -> bool:
+        if not isinstance(other, Token):
+            return False
         return self.type == other.type and self.value == other.value
 
     def __hash__(self) -> int:

@@ -1,13 +1,22 @@
-from my_token import Token, TokenType
+from my_token import Token, TokenType, GenereteIds
 
-KEYWORDS = ['exp', 'int', 'real']
-OPERATORS = ['=','+', '-', '*', '/', '^', '(' , ')', '[', ']', '<', '>', '|', ',', '&', 'λ']
+
+FUNCS = ['exp']
+TYPES = ['int', 'real']
+KEYWORDS = [*FUNCS, *TYPES]
+
+ARITHMETIC_OPERATORS = ['+', '-', '*', '/', '^', '=']
+ARITHMETIC_SYMBOLS = ['(' , ')', '[', ']']
+RELATIONAL_OPERATORS = ['<', '>']
+SYMBOLS = [ '|', ',', 'λ']
+OPERATORS = [*ARITHMETIC_OPERATORS, *ARITHMETIC_SYMBOLS, *RELATIONAL_OPERATORS, *SYMBOLS]
 
 class Lexer(object):
     def __init__(self, text):
         self.text = text
         self.pos = 0
         self.current_char = self.text[self.pos]
+        self.generator_ids = GenereteIds()
     
     def isEnd(self):
         return self.current_char is None
@@ -40,18 +49,18 @@ class Lexer(object):
                 continue
 
             if self.current_char.isdigit():
-                tok = Token(TokenType.INT , self.integer())
+                tok = Token(TokenType.INT , self.integer(), self.generator_ids)
 
                 if self.current_char == '.':
                     self.advance()
-                    return Token(TokenType.REAL, f'{tok.value}.{self.integer()}')
+                    return Token(TokenType.REAL, f'{tok.value}.{self.integer()}', self.generator_ids)
 
                 return tok
 
             if self.current_char in OPERATORS:
                 temp = self.current_char
                 self.advance()
-                return Token(TokenType.OPERATORS, temp)
+                return Token(TokenType.OPERATORS, temp, self.generator_ids)
                 
             result = ''     
             if self.current_char.isalpha():
@@ -59,13 +68,13 @@ class Lexer(object):
                     result += self.current_char
                     self.advance()
                 if result in KEYWORDS:
-                    return Token(TokenType.KEYWORD, result)
+                    return Token(TokenType.KEYWORD, result, self.generator_ids)
                 
                 if self.current_char == "'":
                     result += self.current_char
                     self.advance()
 
-                return Token(TokenType.ID, result)
+                return Token(TokenType.ID, result, self.generator_ids)
 
 
             self.error()
