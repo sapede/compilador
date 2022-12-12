@@ -9,6 +9,8 @@ class TokenType(Enum):
     ID = auto()
     EOF = auto()
     NOTTERMINAL = auto()
+    NEW_LINE = auto()
+    SPACE = auto()
     
 class GenereteIds:
     def __init__(self):
@@ -25,7 +27,7 @@ class Token(object):
     type: TokenType = TokenType.ID
     value: str = ''
     generator : GenereteIds = GenereteIds()
-    
+
     def __post_init__(self):
         self.id = self.generator.generate(self.type)
         self.value_id = str(self.value) + str(self.id)
@@ -47,10 +49,11 @@ class Token(object):
     def __lt__(self, other):
         return self.value < other.value
 
+
     @staticmethod
     def EOF():
         return Token(TokenType.EOF, '$')
 
     @staticmethod
-    def end_of_rule():
+    def empty():
         return Token(TokenType.OPERATORS, 'λ')

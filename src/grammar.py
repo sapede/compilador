@@ -5,13 +5,7 @@ from my_token import Token, TokenType
 from ordered_set import OrderedSet
 
 T = TypeVar("T")
-
-class MySet(OrderedSet):
-    def __init__(self, iterable: Optional[Iterable[T]] = None):
-        super().__init__(iterable)
-    def __str__(self) -> str:
-        return '{' + ', '.join(map(str, self)) + '}'
-
+QTD_LTS = 50
 @dataclass
 class Expr(object):
     value: List[Token] = field(default_factory=list)
@@ -60,12 +54,23 @@ class TokenFirstFollow(object):
     def __lt__(self, other):
         return self.token < other.token
 
+class MySet(OrderedSet):
+    def __init__(self, iterable: Optional[Iterable[TokenFirstFollow]] = None):
+        super().__init__(iterable)
+    def __str__(self) -> str:
+        return '{' + ', '.join(map(str, self)) + '}'
+    def remove(self, value) -> None:
+        for it in self:
+            if it.token == value:
+                del it
+                return
+        raise ValueError(f'{value} not in set')
 class M_Table(object):
     def __init__(self, grammar: Dict[Token, Rule], non_terminals: Set[Token], terminals:Set[Token], firsts: Dict[Token, Set[TokenFirstFollow]], follows: Dict[Token,Set[TokenFirstFollow]], value: Dict[Token, Dict[Token, Expr]] = {}):
         self.grammar = grammar
         self.non_terminals = non_terminals
         self.terminals = terminals
-        self.terminals.remove(Token.end_of_rule())
+        self.terminals.remove(Token.empty())
         self.terminals.add(Token.EOF())
         self.firts = firsts
         self.follows = follows
@@ -90,25 +95,25 @@ class M_Table(object):
         for key, _ in self.grammar.items():
             first = self.firts[key]
             for tok in first:
-                if tok.token == Token.end_of_rule():
+                if tok.token == Token.empty():
                     for elem_f in self.follows[key]:
                         self.set_m_table(key, elem_f.token, tok.expr)
                 else:
                     self.set_m_table(key, tok.token, tok.expr)
 
     def print_table(self):
-        print(''.rjust(14," "), end='')
+        print(''.rjust(QTD_LTS," "), end='')
         for terminal in self.terminals:
-            print(f'{terminal.value}'.center(14," "), end='')
+            print(f'{terminal.value}'.center(QTD_LTS," "), end='')
         print()
         print('_'*500)
         for key, rule in self.grammar.items():
-            print(f'{key.value} ->'.center(14," "), end='')
+            print(f'{key.value} ->'.center(QTD_LTS," "), end='')
             for terminal in self.terminals:
                 if self.value[key][terminal] is not None:
-                    print(f'{key.value} -> { " ".join([t.value for t in self.value[key][terminal].value])}'.center(14," "), end='')
+                    print(f'{key.value} -> { " ".join([t.value for t in self.value[key][terminal].value])}'.center(QTD_LTS," "), end='')
                 else:
-                    print(f'None'.center(14," "), end='')
+                    print(f'None'.center(QTD_LTS," "), end='')
             print('')
 
                     
@@ -126,7 +131,7 @@ class Grammar(object):
 
         init = True
 
-        with open(self.grammar_file, 'r') as f:
+        with open(self.grammar_file, 'r', encoding='utf-8') as f:
             self.lex = Lexer(f.read())
             grammar = dict()
             last_non_terminal = None
@@ -164,24 +169,31 @@ class Grammar(object):
     def scan_expr(self) -> Tuple[Expr, bool]:
         expr = Expr()
 
-        while (token := self.lex.get_next_token()).value not in  [',', '|']:
+        while (token := self.lex.get_next_token(with_end_line=True)).value not in ['\n', '|']:
             if token.type == TokenType.OPERATORS and token.value == '<':
-                non_terminal = self.lex.get_next_token()
-                if non_terminal.type != TokenType.ID:
-                    raise Exception('Invalid non-terminal')
+                new_token = self.lex.get_next_token(with_space=True, with_end_line=True)
+                if new_token.type == TokenType.SPACE or new_token.type == TokenType.NEW_LINE:
+                    expr.value.append(token)
+                    self.terminals.add(token)
+                    if new_token.type == TokenType.NEW_LINE:
+                        return (expr, True)
+                    continue
 
-                non_terminal.type = TokenType.NOTTERMINAL
-                expr.value.append(non_terminal)
+                if new_token.type == TokenType.ID:
+                    new_token.type = TokenType.NOTTERMINAL
+                    expr.value.append(new_token)
 
-                _ = self.lex.get_next_token()
-                continue
+                    _ = self.lex.get_next_token()
+                    continue
                 
-            if token.type == TokenType.OPERATORS or token.type == TokenType.KEYWORD or token.type == TokenType.ID:
+                if new_token.value == '|':
+                    break
+
+            elif token.type == TokenType.OPERATORS or token.type == TokenType.KEYWORD or token.type == TokenType.ID:
                 expr.value.append(token)
                 self.terminals.add(token)
-                continue
         
-        if token == Token(TokenType.OPERATORS, ','):
+        if token == Token(TokenType.NEW_LINE, '\n'):
             return (expr, True)
 
         return (expr, False)
@@ -202,22 +214,26 @@ class Grammar(object):
             firsts[key] = self.FIRST(key)
         return firsts
 
-    def FIRST(self, non_terminal, expr=None) -> MySet[TokenFirstFollow]:
+    def FIRST(self, non_terminal) -> MySet[TokenFirstFollow]:
         first = MySet()
-        for key, rules in self.grammar.items():
-            if key == non_terminal:
-                for rule in rules.value:
-                    if rule.value[0].type == TokenType.NOTTERMINAL:
-                        if expr == None:
-                            first.update(self.FIRST(rule.value[0], rule))
-                        else:
-                            first.update(self.FIRST(rule.value[0], expr))
+        for expr in self.grammar[non_terminal].value:
+            first_elem = expr.value[0]
+            if first_elem.type == TokenType.NOTTERMINAL:
+                ret = self.FIRST(first_elem)
+                first.update(ret)
+                i = 1
+                while i < len(expr.value) and Token.empty() in [tok.token for tok in ret]:
+                    if expr.value[i].type == TokenType.NOTTERMINAL:
+                        ret = self.FIRST(expr.value[i])
+                        first.update(ret)
+                        i += 1
                     else:
-                        if expr == None:
-                            first.add(TokenFirstFollow(rule.value[0], rule))
-                        else:
-                            first.add(TokenFirstFollow(rule.value[0], expr))
+                        first.add(TokenFirstFollow(expr.value[i], expr))
+                        break
+            else:
+                first.add(TokenFirstFollow(expr.value[0], expr))
         return first
+
 
     def FOLLOWs(self) -> Dict[Token, MySet[TokenFirstFollow]]:
         follows = dict()
@@ -225,34 +241,32 @@ class Grammar(object):
             follows[key] = self.FOLLOW(key)
         return follows
 
-    def FOLLOW(self, non_terminal) -> MySet[TokenFirstFollow]:
+    def FOLLOW(self, non_terminal, visited = []) -> MySet[TokenFirstFollow]:
         follow = MySet()
-        initial = True
-        for key , rule in self.grammar.items():
-            if initial == True:
-                follow.add(TokenFirstFollow(Token.EOF(), Expr([Token.EOF()])))
-                initial = False
+        follow.add(TokenFirstFollow(Token.EOF(), Expr([Token.EOF()])))
+        visited.append(non_terminal)
+
+        for key, rule in self.grammar.items():
             for expr in rule.value:
                 for i, token in enumerate(expr.value):
                     if token == non_terminal:
                         if i+1 == len(expr.value) :
-                            if key != non_terminal:
-                                follow.update(self.FOLLOW(key))
-                            break
-                        
-                        if expr.value[i+1].type != TokenType.NOTTERMINAL:
+                            if key != non_terminal and key not in visited:
+                                follow.update(self.FOLLOW(key, visited))
+                          
+                        elif expr.value[i+1].type != TokenType.NOTTERMINAL:
                             follow.add( TokenFirstFollow(expr.value[i+1], expr))
 
-                        if expr.value[i+1] != non_terminal:
+                        else:
                             first = self.FIRST(expr.value[i+1])
-                            for tok in first:
-                                if tok.token == Token.end_of_rule():
-                                    first.remove(tok)
-                                    follow.update(first)
-                                    follow.update(self.FOLLOW(key))
-                                    break
+                            if Token.empty() in [tok.token for tok in first]:
+                                first.remove(Token.empty())
+                                follow.update(first)
+                                if key != non_terminal and key not in visited: 
+                                    follow.update(self.FOLLOW(key, visited))
                             else:
                                 follow.update(first)
+                        break
 
         return follow
 

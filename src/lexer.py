@@ -1,15 +1,16 @@
 from my_token import Token, TokenType, GenereteIds
 
 
-FUNCS = ['exp']
-TYPES = ['int', 'real']
+FUNCS = ['program', 'begin', 'end', 'read', 'write', 'if', 'then', 'while', 'do', 'else', 'exp']
+TYPES = ['integer', 'real', 'numero_int', 'numero_real', 'int']
 KEYWORDS = [*FUNCS, *TYPES]
 
 ARITHMETIC_OPERATORS = ['+', '-', '*', '/', '^', '=']
 ARITHMETIC_SYMBOLS = ['(' , ')', '[', ']']
-RELATIONAL_OPERATORS = ['<', '>']
-SYMBOLS = [ '|', ',', 'λ']
-OPERATORS = [*ARITHMETIC_OPERATORS, *ARITHMETIC_SYMBOLS, *RELATIONAL_OPERATORS, *SYMBOLS]
+RELATIONAL_OPERATORS = ['<>', '>=', '<=', '>', '<']
+SYMBOLS = [ '|', ',', ';', ':', '.', 'λ', '$']
+COMMENTS = ['{', '}', '/*', '*/']
+OPERATORS = [*ARITHMETIC_OPERATORS, *ARITHMETIC_SYMBOLS, *RELATIONAL_OPERATORS, *SYMBOLS , *COMMENTS]
 
 class Lexer(object):
     def __init__(self, text):
@@ -30,6 +31,13 @@ class Lexer(object):
             self.current_char = None
         else:
             self.current_char = self.text[self.pos]
+    
+    def back(self):
+        self.pos -= 1
+        if self.pos < 0:
+            self.current_char = None
+        else:
+            self.current_char = self.text[self.pos]
 
     def skip_whitespace(self):
         while self.current_char is not None and self.current_char.isspace():
@@ -42,11 +50,19 @@ class Lexer(object):
             self.advance()
         return int(result)
 
-    def get_next_token(self) -> Token:
+    def get_next_token(self, with_end_line=False, with_space=False) -> Token:
         while self.current_char is not None:
             if self.current_char.isspace():
-                self.skip_whitespace()
-                continue
+                if with_end_line and self.current_char == '\n':
+                    self.advance()
+                    return Token(TokenType.NEW_LINE, '\n')
+                else:
+                    if with_space:
+                        self.advance()
+                        return Token(TokenType.SPACE, ' ')
+
+                    self.skip_whitespace()
+                    continue
 
             if self.current_char.isdigit():
                 tok = Token(TokenType.INT , self.integer(), self.generator_ids)
@@ -58,13 +74,19 @@ class Lexer(object):
                 return tok
 
             if self.current_char in OPERATORS:
-                temp = self.current_char
+                first = self.current_char
                 self.advance()
-                return Token(TokenType.OPERATORS, temp, self.generator_ids)
+                temp = first + self.current_char
+
+                if temp in [*RELATIONAL_OPERATORS, *COMMENTS]:
+                    self.advance()
+                    return Token(TokenType.OPERATORS, temp, self.generator_ids)
+
+                return Token(TokenType.OPERATORS, first, self.generator_ids)
                 
             result = ''     
             if self.current_char.isalpha():
-                while self.current_char is not None and self.current_char.isalnum():
+                while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'):
                     result += self.current_char
                     self.advance()
                 if result in KEYWORDS:

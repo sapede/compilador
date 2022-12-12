@@ -1,1 +1,27 @@
-1+(2*3)^4^(exp[3])-10
+program teste
+	real : a,b;
+	integer : c, d;
+
+begin 
+	read(a); 
+	read(c); 
+  b := a * a + a;
+  d := 2*c + c;
+  if a > b then
+  	write(a)
+  else
+  	write(b)
+  $;
+  if d < c then
+  	write(d)
+  else
+  	write(c)
+  $;
+  while a > 1 do
+  	a:= a - 1
+  $;
+  write(a);
+  write(b);
+  write(c);
+  write(d)
+end.

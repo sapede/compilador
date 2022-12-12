@@ -16,7 +16,7 @@ class Syntactic:
 
     def __post_init__(self):
         self.grammar = Grammar(self.grammar_file_path)
-        with open(self.main_file_path, 'r') as f:
+        with open(self.main_file_path, 'r', encoding='utf-8') as f:
             self.lexer = Lexer(f.read())
 
     def get_next_token(self):
@@ -87,7 +87,7 @@ class Syntactic:
                     self.calc_ops(op.value)
 
                 exp = self.grammar.m_table.value[X][terminal].value[:]
-                exp_without_end = [t for t in exp if t != Token.end_of_rule()]
+                exp_without_end = [t for t in exp if t != Token.empty()]
 
                 if len(exp_without_end) > 0 :
                     last_token_exp = exp_without_end[-1] 
