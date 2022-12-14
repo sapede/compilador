@@ -38,32 +38,28 @@ class Syntactic:
         while (len(self.stack) > 0 ):
             X = self.get_first_stack()
 
-            terminal = None
-            if (token.type == TokenType.INT or token.type == TokenType.REAL or token.type == TokenType.ID):
-                terminal = Token(TokenType.KEYWORD, token.type.name.lower())
-            else:
-                terminal = token
-
             # TO DEBUG
+            print(token)
+            print([t for t in self.read_stack])
             print(f'ID  == {[t for t in self.read_stack_id]}')
             print(f'OP  == {[t.value for t in self.read_stack_op]}')
             print(f'TER  == {[t.value for t in self.terminator_stack]}')
             print('------------------------------------------------')
-            if (X == terminal):
+            if (X == token or (X.type == TokenType.ID and token.type == TokenType.ID)):
                 self.stack.pop(0)
-                if (terminal.type == TokenType.KEYWORD):
-                    if (terminal.value in FUNCS):
+                if (token.type == TokenType.KEYWORD):
+                    if (token.value in FUNCS):
                         self.read_stack_op.insert(0, token)
                         self.terminator_stack.insert(0, last_token_exp)
-                    elif (terminal.value in TYPES):
+                elif (token.type == TokenType.ID):
                         self.read_stack_id.insert(0, token.value)
-                elif (terminal.type == TokenType.OPERATORS):
+                elif (token.type == TokenType.OPERATORS):
                     if (len(self.terminator_stack) > 0 and token.value == self.terminator_stack[0].value):
                         op = self.read_stack_op.pop(0)
                         self.terminator_stack.pop(0)
                         self.calc_ops(op.value)
                             
-                    elif (terminal.value in ARITHMETIC_OPERATORS):
+                    elif (token.value in ARITHMETIC_OPERATORS):
                         self.read_stack_op.insert(0, token)
                         self.terminator_stack.insert(0, last_token_exp)
                 
@@ -73,9 +69,9 @@ class Syntactic:
             elif (X.type != TokenType.NOTTERMINAL):
                 raise Exception('Invalid token')
 
-            elif (self.grammar.m_table.value[X][terminal] is None):
+            elif (self.grammar.m_table.value[X][token] is None):
                 l = [k.value for k, t in self.grammar.m_table.value[X].items() if t is not None]
-                raise Exception(f"\'{terminal}\' Invalid token, Expecting the following tokens: {', '.join(l)}")
+                raise Exception(f"\'{token}\' Invalid token, Expecting the following tokens: {', '.join(l)}")
 
             else:
                 term = self.stack.pop(0)
@@ -86,7 +82,7 @@ class Syntactic:
 
                     self.calc_ops(op.value)
 
-                exp = self.grammar.m_table.value[X][terminal].value[:]
+                exp = self.grammar.m_table.value[X][token].value[:]
                 exp_without_end = [t for t in exp if t != Token.empty()]
 
                 if len(exp_without_end) > 0 :
@@ -95,7 +91,7 @@ class Syntactic:
 
             self.print_stack()
             X = self.get_first_stack()
-        # print([t.value for t in self.read_stack])
+        
 
         if (len(self.read_stack_id) > 0):
             return self.read_stack_id[0]
@@ -148,7 +144,8 @@ class Syntactic:
 
     def print_stack(self):
         for token in self.stack:
-            print(f'{token.value}◉' if (token.value_id in [t.value_id for t in self.terminator_stack]) else token.value , ' ', end='')
+            token_formated = token.value if token.type != TokenType.NOTTERMINAL else f'<{token.value}>'
+            print(f'{token_formated}◉' if (token.value_id in [t.value_id for t in self.terminator_stack]) else token_formated , ' ', end='')
         print()
 
             
