@@ -5,9 +5,9 @@ FUNCS = ['program', 'begin', 'end', 'read', 'write', 'if', 'then', 'while', 'do'
 TYPES = ['integer', 'real', 'numero_int', 'numero_real', 'int']
 KEYWORDS = [*FUNCS, *TYPES]
 
-ARITHMETIC_OPERATORS = ['+', '-', '*', '/', '^', '=']
+ARITHMETIC_OPERATORS = ['+', '-', '*', '/', '^', ':=']
 ARITHMETIC_SYMBOLS = ['(' , ')', '[', ']']
-RELATIONAL_OPERATORS = ['<>', '>=', '<=', '>', '<']
+RELATIONAL_OPERATORS = ['<>', '>=', '<=', '>', '<', '=']
 SYMBOLS = [ '|', ',', ';', ':', '.', 'λ', '$']
 COMMENTS = ['{', '}', '/*', '*/']
 OPERATORS = [*ARITHMETIC_OPERATORS, *ARITHMETIC_SYMBOLS, *RELATIONAL_OPERATORS, *SYMBOLS , *COMMENTS]
@@ -78,7 +78,7 @@ class Lexer(object):
                 self.advance()
                 temp = first + self.current_char
 
-                if temp in [*RELATIONAL_OPERATORS, *COMMENTS]:
+                if temp in [*RELATIONAL_OPERATORS, *COMMENTS, *ARITHMETIC_OPERATORS]:
                     self.advance()
                     return Token(TokenType.OPERATORS, temp, self.generator_ids)
 

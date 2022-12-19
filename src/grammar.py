@@ -61,13 +61,14 @@ class MySet(OrderedSet):
         return '{' + ', '.join(map(str, self)) + '}'
     def remove(self, value) -> None:
         for it in self:
-            if it.token == value:
+            if it.token.value == value.value:
                 del it
-                return
+                return 
         raise ValueError(f'{value} not in set')
 class M_Table(object):
     def __init__(self, grammar: Dict[Token, Rule], non_terminals: Set[Token], terminals:Set[Token], firsts: Dict[Token, Set[TokenFirstFollow]], follows: Dict[Token,Set[TokenFirstFollow]], value: Dict[Token, Dict[Token, Expr]] = {}):
-        self.grammar = grammar
+        self.grammar_ent = grammar
+        self.grammar = self.grammar_ent.grammar
         self.non_terminals = non_terminals
         self.terminals = terminals
         self.terminals.remove(Token.empty())
@@ -86,20 +87,25 @@ class M_Table(object):
                 self.value[non_terminal][terminal] = None   
 
     def set_m_table(self, non_terminal: Token, terminal: Token, expr: Expr):
-        self.value[non_terminal][terminal] = expr
+        if self.value[non_terminal][terminal] == None :
+            self.value[non_terminal][terminal] = expr
 
     def get_m_table(self, non_terminal: Token, terminal: Token):
         return self.value[non_terminal][terminal]
     
     def fill_table(self):
-        for key, _ in self.grammar.items():
-            first = self.firts[key]
-            for tok in first:
-                if tok.token == Token.empty():
-                    for elem_f in self.follows[key]:
-                        self.set_m_table(key, elem_f.token, tok.expr)
-                else:
-                    self.set_m_table(key, tok.token, tok.expr)
+        for key, rule in self.grammar.items():
+            for expr in rule.value:
+                firsts = self.grammar_ent.FIRST(expr)
+                for tok in firsts:
+                    if tok.token == Token.empty():
+                        for elem_f in self.follows[key]:
+                            if elem_f == Token.EOF():
+                                self.set_m_table(key, elem_f.token, elem_f.expr)
+                            else:
+                                self.set_m_table(key, elem_f.token, expr)
+                    else:
+                        self.set_m_table(key, tok.token, expr)
 
     def print_table(self):
         print(''.rjust(QTD_LTS," "), end='')
@@ -210,47 +216,62 @@ class Grammar(object):
 
     def FIRSTs(self) -> Dict[str, MySet[TokenFirstFollow]]:
         firsts = dict()
-        for key, _ in self.grammar.items():
-            firsts[key] = self.FIRST(key)
+        for key, rule in self.grammar.items():
+            firsts[key] = MySet()
+            for expr in rule.value:
+                firsts[key].update(self.FIRST(expr))
         return firsts
 
-    def FIRST(self, non_terminal) -> MySet[TokenFirstFollow]:
+    def FIRST(self, expr) -> MySet[TokenFirstFollow]:
         first = MySet()
-        for expr in self.grammar[non_terminal].value:
-            first_elem = expr.value[0]
-            if first_elem.type == TokenType.NOTTERMINAL:
-                ret = self.FIRST(first_elem)
-                first.update(ret)
-                i = 1
-                while i < len(expr.value) and Token.empty() in [tok.token for tok in ret]:
-                    if expr.value[i].type == TokenType.NOTTERMINAL:
-                        ret = self.FIRST(expr.value[i])
-                        first.update(ret)
-                        i += 1
-                    else:
-                        first.add(TokenFirstFollow(expr.value[i], expr))
-                        break
-            else:
-                first.add(TokenFirstFollow(expr.value[0], expr))
+        first_elem = expr.value[0]
+        if first_elem.type == TokenType.NOTTERMINAL:
+            ret = MySet()
+            for new_expr in self.grammar[first_elem].value:
+                ret.update(self.FIRST(new_expr))
+
+            first.update(ret)
+            i = 1
+            while i < len(expr.value) and Token.empty() in [tok.token for tok in ret]:
+                if expr.value[i].type == TokenType.NOTTERMINAL:
+                    ret = MySet()
+                    for new_expr in self.grammar[expr.value[i]].value:
+                        ret.update(self.FIRST(new_expr))
+
+                    first.update(ret)
+                    i += 1
+                else:
+                    if Token.empty() != expr.value[i]:
+                        first.add(TokenFirstFollow(expr.value[i], expr ))
+                    break
+            if Token.empty() in [t.token for t in first]:
+                first = MySet([t for t in first if t.token != Token.empty()])
+        else:
+            first.add(TokenFirstFollow(first_elem, expr))
         return first
 
 
     def FOLLOWs(self) -> Dict[Token, MySet[TokenFirstFollow]]:
         follows = dict()
+        first = True
         for key, _ in self.grammar.items():
-            follows[key] = self.FOLLOW(key)
+            follows[key] = self.FOLLOW(key, visited=[], first_param=first)
+            if first:
+                first = False
         return follows
 
-    def FOLLOW(self, non_terminal, visited = []) -> MySet[TokenFirstFollow]:
+    def FOLLOW(self, non_terminal, visited = [], first_param = False) -> MySet[TokenFirstFollow]:
         follow = MySet()
-        follow.add(TokenFirstFollow(Token.EOF(), Expr([Token.EOF()])))
+        if first_param:
+           follow = MySet([TokenFirstFollow(Token.EOF(), Expr([Token.EOF()]))])
+        
         visited.append(non_terminal)
 
         for key, rule in self.grammar.items():
             for expr in rule.value:
                 for i, token in enumerate(expr.value):
                     if token == non_terminal:
-                        if i+1 == len(expr.value) :
+                        if i+1 == len(expr.value):
                             if key != non_terminal and key not in visited:
                                 follow.update(self.FOLLOW(key, visited))
                           
@@ -258,20 +279,22 @@ class Grammar(object):
                             follow.add( TokenFirstFollow(expr.value[i+1], expr))
 
                         else:
-                            first = self.FIRST(expr.value[i+1])
+                            first = MySet()
+                            for new_expr in self.grammar[expr.value[i+1]].value:
+                                first.update(self.FIRST(new_expr))
                             if Token.empty() in [tok.token for tok in first]:
-                                first.remove(Token.empty())
+                                first = MySet([tok for tok in first if tok.token != Token.empty()])
                                 follow.update(first)
                                 if key != non_terminal and key not in visited: 
                                     follow.update(self.FOLLOW(key, visited))
                             else:
                                 follow.update(first)
-                        break
 
+           
         return follow
 
     def create_m_table(self):
-        m_table = M_Table(grammar=self.grammar, firsts=self.FIRSTs(), follows=self.FOLLOWs(), terminals=self.terminals, non_terminals=self.non_terminals)
+        m_table = M_Table(grammar=self, firsts=self.FIRSTs(), follows=self.FOLLOWs(), terminals=self.terminals, non_terminals=self.non_terminals)
         return m_table
         
 
